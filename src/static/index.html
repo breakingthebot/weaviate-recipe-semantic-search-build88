@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Build 88 — Weaviate Recipe Semantic Search Engine</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="header-brand">
+        <div class="brand-logo">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 8h1a4 4 0 0 1 0 8h-1"></path>
+            <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path>
+            <line x1="6" y1="1" x2="6" y2="4"></line>
+            <line x1="10" y1="1" x2="10" y2="4"></line>
+            <line x1="14" y1="1" x2="14" y2="4"></line>
+          </svg>
+        </div>
+        <div>
+          <div class="brand-title">Weaviate Recipe Semantic Search Engine</div>
+          <div class="brand-subtitle">Build 88 • Semantic Flavor Search by Description • Weaviate nearText & Hybrid Blending</div>
+        </div>
+      </div>
+      <div class="header-telemetry">
+        <span class="badge badge-tech">Weaviate Class: Recipe</span>
+        <span class="badge badge-metric">HNSW • Cosine</span>
+        <span class="badge badge-recipes" id="top-recipe-count">8 Recipes</span>
+        <button class="btn btn-outline-danger btn-sm" id="btn-reset-index">Reset</button>
+        <button class="btn btn-outline btn-sm" id="btn-reseed-catalog">Reseed</button>
+      </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="tab-nav">
+      <button class="tab-btn active" data-tab="tab-semantic">
+        <span class="tab-icon">✨</span> Sensory nearText Search
+      </button>
+      <button class="tab-btn" data-tab="tab-hybrid">
+        <span class="tab-icon">⚡</span> Weaviate Hybrid Search
+      </button>
+      <button class="tab-btn" data-tab="tab-chef">
+        <span class="tab-icon">👨‍🍳</span> Chef & Beverage Pairings
+      </button>
+      <button class="tab-btn" data-tab="tab-schema">
+        <span class="tab-icon">📖</span> Recipe Creator & Schema
+      </button>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="app-main">
+      <!-- TAB 1: Sensory nearText Search -->
+      <section class="tab-content active" id="tab-semantic">
+        <div class="card search-box-card">
+          <div class="card-header">
+            <h3>Semantic Search by Description (Weaviate nearText)</h3>
+            <p class="card-sub">Search for dishes by abstract flavor cravings, moods, or sensory textures rather than rigid ingredients</p>
+          </div>
+          <form id="form-semantic-search" class="form-layout">
+            <div class="form-group">
+              <label for="semantic-query">Describe What You Feel Like Eating</label>
+              <div class="input-with-pills">
+                <input type="text" id="semantic-query" class="form-control query-input" placeholder="e.g. A warm, comforting dinner for a cold rainy evening that feels like an authentic Italian trattoria..." required>
+                <div class="quick-pills">
+                  <span class="pill-label">Try ideas:</span>
+                  <button type="button" class="pill-btn" data-query="Comforting creamy garlic dinner for a cold rainy evening">Comforting Creamy Garlic</button>
+                  <button type="button" class="pill-btn" data-query="Fiery street food with smoky charred pork and citrus herbs">Fiery Smoky Street Tacos</button>
+                  <button type="button" class="pill-btn" data-query="Crisp herbaceous Mediterranean grilled seafood with tangy lemon capers">Zesty Herbaceous Seafood</button>
+                  <button type="button" class="pill-btn" data-query="Decadent silky French dessert with crackling caramelized sugar">Silky Caramelized Custard</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Search Filters -->
+            <div class="filter-bar">
+              <div class="form-group col-sm">
+                <label for="filter-cuisine">Cuisine Region</label>
+                <select id="filter-cuisine" class="form-control">
+                  <option value="">All Cuisines</option>
+                  <option value="Italian">Italian</option>
+                  <option value="Mexican">Mexican</option>
+                  <option value="Thai">Thai</option>
+                  <option value="Indian">Indian</option>
+                  <option value="Mediterranean">Mediterranean</option>
+                  <option value="French">French</option>
+                  <option value="Japanese">Japanese</option>
+                  <option value="American">American</option>
+                </select>
+              </div>
+              <div class="form-group col-sm">
+                <label for="filter-dietary">Dietary Filter</label>
+                <select id="filter-dietary" class="form-control">
+                  <option value="">Any Diet</option>
+                  <option value="keto">Keto</option>
+                  <option value="gluten-free">Gluten-Free</option>
+                  <option value="vegan">Vegan</option>
+                  <option value="vegetarian">Vegetarian</option>
+                  <option value="dairy-free">Dairy-Free</option>
+                  <option value="low-carb">Low-Carb</option>
+                </select>
+              </div>
+              <div class="form-group col-sm">
+                <label for="filter-certainty">Min Certainty: <span id="val-certainty">0.50</span></label>
+                <input type="range" id="filter-certainty" min="0.30" max="0.90" step="0.05" value="0.50" class="form-range">
+              </div>
+              <div class="form-actions-inline">
+                <button type="submit" class="btn btn-primary" id="btn-run-semantic">
+                  <span>Search Recipes</span>
+                </button>
+              </div>
+            </div>
+          </form>
+
+          <!-- Semantic Search Results Grid -->
+          <div class="results-meta" id="semantic-results-meta" style="display: none;">
+            <span id="results-count-label">Found 0 matching recipes</span>
+            <span class="processing-time" id="results-time-label">0.0 ms</span>
+          </div>
+          <div class="recipe-grid" id="semantic-results-grid">
+            <div class="empty-state">Enter a sensory description or click one of the preset flavor ideas above to search!</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 2: Weaviate Hybrid Search -->
+      <section class="tab-content" id="tab-hybrid">
+        <div class="card">
+          <div class="card-header">
+            <h3>Weaviate Hybrid Search (Dense nearText + BM25 Keywords)</h3>
+            <p class="card-sub">Fine-tune the balance between abstract semantic discovery and exact keyword matching</p>
+          </div>
+          <form id="form-hybrid-search" class="form-layout">
+            <div class="form-group">
+              <label for="hybrid-query">Search Query</label>
+              <input type="text" id="hybrid-query" class="form-control" placeholder="e.g. shrimp lemongrass tom yum soup" required>
+            </div>
+            <div class="form-row">
+              <div class="form-group col">
+                <div class="alpha-header">
+                  <label for="hybrid-alpha">Hybrid Weighting (Alpha): <strong id="val-hybrid-alpha">0.75</strong></label>
+                  <span class="alpha-status" id="hybrid-alpha-status">Weaviate Standard (75% Vector / 25% BM25)</span>
+                </div>
+                <input type="range" id="hybrid-alpha" min="0.0" max="1.0" step="0.05" value="0.75" class="form-range">
+                <div class="alpha-ticks">
+                  <span>0.0 (Pure BM25 Keywords)</span>
+                  <span>0.5 (Equal Blending)</span>
+                  <span>1.0 (Pure nearText Vector)</span>
+                </div>
+              </div>
+              <div class="form-group col" style="max-width: 160px;">
+                <label for="hybrid-limit">Limit: <span id="val-hybrid-limit">5</span></label>
+                <input type="range" id="hybrid-limit" min="1" max="10" value="5" class="form-range">
+              </div>
+            </div>
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary" id="btn-run-hybrid">Run Hybrid Search</button>
+            </div>
+          </form>
+
+          <!-- Hybrid Results -->
+          <div class="results-container" id="hybrid-results-box">
+            <div class="empty-state">Submit a query to evaluate Weaviate hybrid ranking scores.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 3: Chef & Beverage Pairings -->
+      <section class="tab-content" id="tab-chef">
+        <div class="card">
+          <div class="card-header">
+            <h3>Personalized Sommelier & Chef Recommendations</h3>
+            <p class="card-sub">Describe what flavors you desire, and our generative culinary agent will match the ideal dish, suggest beverage pairings, and offer smart ingredient substitutions</p>
+          </div>
+          <form id="form-chef" class="form-layout">
+            <div class="form-group">
+              <label for="chef-craving">What are you craving tonight?</label>
+              <textarea id="chef-craving" rows="3" class="form-control" placeholder="e.g. I want something rich, indulgent, and comforting with garlic and cream, but need it to be keto-friendly..." required></textarea>
+            </div>
+            <div class="form-row">
+              <div class="form-group col">
+                <label for="chef-dietary">Dietary Restriction (Optional)</label>
+                <select id="chef-dietary" class="form-control">
+                  <option value="">None</option>
+                  <option value="keto">Keto / Low-Carb</option>
+                  <option value="gluten-free">Gluten-Free</option>
+                  <option value="dairy-free">Dairy-Free</option>
+                  <option value="vegan">Vegan</option>
+                </select>
+              </div>
+              <div class="form-group col">
+                <label for="chef-max-time">Max Prep Time (Minutes, Optional)</label>
+                <input type="number" id="chef-max-time" class="form-control" placeholder="e.g. 30" min="10" max="120">
+              </div>
+            </div>
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary" id="btn-run-chef">Ask the Chef</button>
+            </div>
+          </form>
+
+          <!-- Chef Recommendation Output -->
+          <div class="chef-output" id="chef-output-box" style="display: none;">
+            <div class="chef-card">
+              <div class="chef-card-header">
+                <div>
+                  <h4 id="chef-rec-title">Recipe Recommendation</h4>
+                  <span class="badge badge-recipes" id="chef-rec-cuisine">Italian</span>
+                </div>
+                <div class="badge badge-tech" id="chef-rec-confidence">Confidence: 90%</div>
+              </div>
+              <p class="chef-rationale" id="chef-rec-rationale"></p>
+              
+              <div class="chef-sections">
+                <div class="chef-section">
+                  <h5>🍷 Sommelier Beverage Pairing</h5>
+                  <p id="chef-rec-pairing"></p>
+                </div>
+                <div class="chef-section">
+                  <h5>🌱 Smart Ingredient Substitutions</h5>
+                  <ul id="chef-rec-subs"></ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 4: Recipe Creator & Schema -->
+      <section class="tab-content" id="tab-schema">
+        <div class="grid-2">
+          <!-- Create Recipe Form -->
+          <div class="card">
+            <div class="card-header">
+              <h3>Add New Recipe to Weaviate</h3>
+              <p class="card-sub">Indexes properties and automatically generates sensory vector embeddings</p>
+            </div>
+            <form id="form-create-recipe" class="form-layout">
+              <div class="form-group">
+                <label for="new-title">Recipe Title</label>
+                <input type="text" id="new-title" class="form-control" placeholder="e.g. Thai Green Coconut Curry" required>
+              </div>
+              <div class="form-row">
+                <div class="form-group col">
+                  <label for="new-cuisine">Cuisine</label>
+                  <input type="text" id="new-cuisine" class="form-control" placeholder="e.g. Thai" required>
+                </div>
+                <div class="form-group col">
+                  <label for="new-difficulty">Difficulty</label>
+                  <select id="new-difficulty" class="form-control">
+                    <option value="Easy">Easy</option>
+                    <option value="Medium">Medium</option>
+                    <option value="Hard">Hard</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="new-description">Sensory Description & Flavor Profile</label>
+                <textarea id="new-description" rows="3" class="form-control" placeholder="Describe the aroma, taste notes (creamy, fiery, tangy), and mouthfeel..." required></textarea>
+              </div>
+              <div class="form-group">
+                <label for="new-ingredients">Ingredients (Comma Separated)</label>
+                <input type="text" id="new-ingredients" class="form-control" placeholder="chicken, coconut milk, green curry paste, bamboo shoots, basil" required>
+              </div>
+              <div class="form-group">
+                <label for="new-dietary">Dietary Tags (Comma Separated)</label>
+                <input type="text" id="new-dietary" class="form-control" placeholder="gluten-free, dairy-free, keto">
+              </div>
+              <div class="form-row">
+                <div class="form-group col">
+                  <label for="new-prep">Prep Time (min)</label>
+                  <input type="number" id="new-prep" class="form-control" value="15" min="1">
+                </div>
+                <div class="form-group col">
+                  <label for="new-cook">Cook Time (min)</label>
+                  <input type="number" id="new-cook" class="form-control" value="20" min="0">
+                </div>
+                <div class="form-group col">
+                  <label for="new-calories">Calories</label>
+                  <input type="number" id="new-calories" class="form-control" value="480" min="10">
+                </div>
+              </div>
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary" id="btn-submit-recipe">Index into Weaviate</button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Weaviate Schema Telemetry -->
+          <div class="card">
+            <div class="card-header">
+              <h3>Weaviate Class Schema Telemetry</h3>
+              <p class="card-sub">Class definition, vector index properties, and storage state</p>
+            </div>
+            <div class="schema-stats-row">
+              <div class="stat-badge-box">
+                <span class="stat-badge-label">Class</span>
+                <span class="stat-badge-value" id="schema-class-name">Recipe</span>
+              </div>
+              <div class="stat-badge-box">
+                <span class="stat-badge-label">Index</span>
+                <span class="stat-badge-value" id="schema-index-type">HNSW</span>
+              </div>
+              <div class="stat-badge-box">
+                <span class="stat-badge-label">Metric</span>
+                <span class="stat-badge-value" id="schema-metric">Cosine</span>
+              </div>
+              <div class="stat-badge-box">
+                <span class="stat-badge-label">Objects</span>
+                <span class="stat-badge-value" id="schema-objects-count">8</span>
+              </div>
+            </div>
+            <h4 style="margin-top: 1.25rem; margin-bottom: 0.5rem; font-size: 0.9375rem;">Properties Schema</h4>
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Property Name</th>
+                    <th>Data Type</th>
+                    <th>Description</th>
+                  </tr>
+                </thead>
+                <tbody id="schema-properties-body">
+                  <!-- Injected via JavaScript -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

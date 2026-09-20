@@ -1,0 +1,25 @@
+# Local Build Ignores
+.env
+.env.*
+!.env.example
+*.local
+AGENTS.md
+
+# Python
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Node
+node_modules/
+dist/
+.next/
+
+# Build tracking, iteration files and logs
+BUILD_NOTES.md
+docs/summaries/
+summaries/
+*iteration*.md
+*iteration*_summary.md
+*.log
